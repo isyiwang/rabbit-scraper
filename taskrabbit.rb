@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'nokogiri'
 require 'anemone'
-require 'time'
 require 'spreadsheet'
 require './task'
 
@@ -30,8 +29,6 @@ def scrape_category(url)
   rescue Exception => ex
     puts ex
   end
-
-  return ""
 end
 
 # Scrape data for first HTML element found by css query
@@ -42,8 +39,6 @@ def scrape_css(elem, css)
   rescue Exception => ex
     puts ex
   end
-
-  return ""
 end
 
 # Scrape task details from Nokogiri element
@@ -78,8 +73,7 @@ def scrape_tasks(url)
   doc.css("li.task_event").each do |node|
     task = scrape_task(node)
 
-    next if task.nil?
-    tasks << task unless task.empty?
+    tasks << task unless task.empty? or task.nil?
   end
 
   return tasks
@@ -132,18 +126,18 @@ File.open(ARGV[0]).each_line do |url|
       end
 
       anemone.on_every_page do |page|
-          # Check if URL has been visited
-          next unless visited_urls[page.url].nil?
-          visited_urls[page.url] = true
+        # Check if URL has been visited
+        next unless visited_urls[page.url].nil?
+        visited_urls[page.url] = true
 
-          puts "Scraping #{page.url}"
-          new_tasks = scrape_tasks(page.url)
+        puts "Scraping #{page.url}"
+        new_tasks = scrape_tasks(page.url)
 
-          # Set task category
-          category = scrape_category(url)
-          new_tasks.each { |task| task.category = category }
+        # Set task category
+        category = scrape_category(url)
+        new_tasks.each { |task| task.category = category }
 
-          tasks = new_tasks + tasks
+        tasks = new_tasks + tasks
       end
       puts "Finished scraping #{tasks.length} tasks"
     end
@@ -155,4 +149,5 @@ end
 # Write spreadsheet
 output_filename = ARGV.length >= 2 ? ARGV[1] : default_output_filename
 write_tasks_to_spreadsheet(tasks, output_filename)
+
 puts "Finished writing #{tasks.length} tasks to #{output_filename}"
